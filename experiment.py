@@ -1,21 +1,11 @@
 """
----
-title: Finetune GPT-2 with LoRA
-summary: This is training code with notes for fine-tuning pre-trained GPT-2 model with LoRA.
----
-
-# Finetune [GPT-2](gpt2.html) with [LoRA](index.html)
-
-Here's a Colab notebook for training a feedback transformer on Tiny Shakespeare dataset.
-
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/labmlai/annotated_deep_learning_paper_implementations/blob/master/labml_nn/lora/experiment.ipynb)
+Finetune GPT-2 with LoRA
 """
 
 import torch
 from torch.optim import Adam
 from torch.utils.data import DataLoader, TensorDataset
 from transformers import AutoTokenizer, AutoModelForCausalLM
-
 from labml import lab, monit, tracker
 from labml.configs import BaseConfigs, option
 from labml.utils.download import download_file
@@ -25,7 +15,7 @@ from labml_nn.lora.gpt2 import GPTModel
 
 class Trainer(BaseConfigs):
     """
-    ## Trainer configurations and the training loop
+    Trainer configurations and the training loop
 
     The default configs can and will be over-ridden when we start the experiment
     """
@@ -52,7 +42,7 @@ class Trainer(BaseConfigs):
     text: TensorDataset = "tiny_shakespeare"
     # Huggingface tokenizer
     tokenizer = AutoTokenizer.from_pretrained("gpt2")
-    # [GPT2 model](gpt2.html)
+    # GPT2 model
     model: GPTModel
     # Optimizer
     optimizer: torch.optim.Adam
@@ -63,14 +53,14 @@ class Trainer(BaseConfigs):
 
     def _load_pretrained_weights(self):
         """
-        ### Load pre-trained [GPT-2 from huggingface](https://huggingface.co/openai-community/gpt2)
+        Load pre-trained GPT-2 from huggingface
         """
 
         # Load the huggingface model and get the parameters
         hf_model = AutoModelForCausalLM.from_pretrained("gpt2")
         state_dict = hf_model.state_dict()
 
-        # Transformer embedding and prediction layer parameter mapping (`hf: ours`)
+        # Transformer embedding and prediction layer parameter mapping
         mapping = {
             'transformer.wte.weight': 'token_embedding.weight',
             'transformer.wpe.weight': 'position_embedding.weight',
@@ -79,7 +69,7 @@ class Trainer(BaseConfigs):
             'lm_head.weight': 'lm_head.weight'
         }
 
-        # Mapping (`hf: ours`) of decoder layers
+        # Mapping of decoder layers
         for i in range(12):
             mapping[f'transformer.h.{i}.ln_1.weight'] = f'blocks.{i}.attn_norm.weight'
             mapping[f'transformer.h.{i}.ln_1.bias'] = f'blocks.{i}.attn_norm.bias'
@@ -109,7 +99,7 @@ class Trainer(BaseConfigs):
         for layer in convo_layers:
             new_state_dict[layer] = torch.transpose(new_state_dict[layer], 0, 1)
 
-        # Load out model. We use `strict = False` because the state does not have LoRA weights
+        # Load our model. We use strict = False because the state does not have LoRA weights
         missing_keys, unexpected_keys = self.model.load_state_dict(new_state_dict, strict=False)
 
         # make sure that only lora weights are not loaded
@@ -118,9 +108,9 @@ class Trainer(BaseConfigs):
 
     def initialize(self):
         """
-        ### Initialize the model, optimizer and dataloader
+        Initialize the model, optimizer and dataloader
         """
-        # Initialize the [GPT2 model](gpt2.html)
+        # Initialize the GPT2 model
         self.model = GPTModel(
             layer_norm_epsilon=self.layer_norm_epsilon,
             d_model=self.d_model,
@@ -142,13 +132,13 @@ class Trainer(BaseConfigs):
 
     def run(self):
         """
-        ### Training loop
+        Training loop
         """
 
         for _ in monit.loop(self.epochs):
-            # `inputs` has shape `[batch_size, seq_len]`
+            # inputs has shape (batch_size, seq_len)
             for (inputs,) in monit.iterate('Train', self.data_loader):
-                # Move `inputs` to device
+                # Move inputs to device
                 inputs = inputs.to(self.device)
                 # Call the model, with the all but the last token
                 logits = self.model(inputs[:, :-1])
@@ -165,14 +155,14 @@ class Trainer(BaseConfigs):
                 # Log the loss
                 tracker.save({'loss': loss})
                 tracker.add_global_step()
-            #
+            # New line
             tracker.new_line()
 
 
 @option(Trainer.text)
 def tiny_shakespeare(c: Trainer):
     """
-    ### Tiny Shakespeare dataset
+    Tiny Shakespeare dataset
 
     It will download from the url if not present
     """

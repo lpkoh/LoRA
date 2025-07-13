@@ -1,13 +1,5 @@
 """
----
-title: GPT-2 with LoRA
-summary: GPT-2 implementation with LoRA modules
----
-
-# GPT-2 with [LoRA modules](index.html)
-
-Here's [the training code](experiment.html) for training a GPT2 model with LoRA
- on Tiny Shakespeare dataset.
+GPT-2 implementation with LoRA modules
 """
 
 import torch
@@ -18,14 +10,14 @@ from labml_nn.lora import Linear, Embedding
 
 class FFN(nn.Module):
     """
-    ### Feedforward Network
+    Feedforward Network
     """
 
     def __init__(self, d_model: int, d_ff: int, r: int):
         """
-        :param d_model: is the number of dimensions
-        :param d_ff: is the size of the hidden dimension
-        :param r: is the lora rank
+        d_model: is the number of dimensions
+        d_ff: is the size of the hidden dimension
+        r: is the lora rank
         """
         super().__init__()
 
@@ -36,7 +28,7 @@ class FFN(nn.Module):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
-        :param x: is the embeddings tensor with shape `[batch_size, seq_len, d_model]`
+        x: is the embeddings tensor with shape (batch_size, seq_len, d_model)
         """
         x = self.linear_in(x)
         x = self.act(x)
@@ -46,14 +38,14 @@ class FFN(nn.Module):
 
 class MultiHeadAttention(nn.Module):
     """
-    ### Multi-Head Attention
+    Multi-Head Attention
     """
 
     def __init__(self, d_model: int, n_heads: int, r: int):
         """
-        :param d_model: is the number of dimensions in the embeddings
-        :param n_heads: is the number of heads
-        :param r: is the lora rank
+        d_model: is the number of dimensions in the embeddings
+        n_heads: is the number of heads
+        r: is the lora rank
         """
         super().__init__()
         self.d_model = d_model
@@ -67,7 +59,7 @@ class MultiHeadAttention(nn.Module):
 
     def _split_heads(self, x: torch.Tensor):
         """
-        :param x: is the tensor with shape `[batch_size, seq_len, d_model]`
+        x: is the tensor with shape (batch_size, seq_len, d_model)
         """
         # Split last dimension to `[n_heads, d_head]`
         x = x.view(x.shape[:-1] + (self.n_heads, self.d_head))
@@ -76,7 +68,7 @@ class MultiHeadAttention(nn.Module):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
-        :param x: is the embeddings tensor with shape `[batch_size, seq_len, d_model]`
+        x: is the embeddings tensor with shape (batch_size, seq_len, d_model)
         """
         batch_size, seq_length, _ = x.shape
 
@@ -100,15 +92,15 @@ class MultiHeadAttention(nn.Module):
 
 class Block(nn.Module):
     """
-    ### Decoder block
+    Decoder block
     """
 
     def __init__(self, d_model: int, n_heads: int, layer_norm_epsilon: float, r: int):
         """
-        :param d_model: is the number of dimensions in the embeddings
-        :param n_heads: is the number of heads
-        :param layer_norm_epsilon: is the layer norm epsilon
-        :param r: is the lora rank
+        d_model: is the number of dimensions in the embeddings
+        n_heads: is the number of heads
+        layer_norm_epsilon: is the layer norm epsilon
+        r: is the lora rank
         """
         super().__init__()
         # Attention pre-normalization layer
@@ -122,7 +114,7 @@ class Block(nn.Module):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
-        :param x: is the embeddings tensor with shape `[batch_size, seq_len, d_model]`
+        x: is the embeddings tensor with shape (batch_size, seq_len, d_model)
         """
         # Attention
         x = x + self.attn(self.attn_norm(x))
@@ -134,7 +126,7 @@ class Block(nn.Module):
 
 class GPTModel(nn.Module):
     """
-    ## GPT2 Model
+    GPT2 Model
     """
 
     def __init__(self, *, d_model: int,
@@ -143,13 +135,13 @@ class GPTModel(nn.Module):
                  layer_norm_epsilon: float,
                  vocab_size: int, r: int):
         """
-        :param d_model: is the number of dimensions in the embeddings
-        :param n_heads: is the number of attention heads
-        :param n_layers: is the number of decoder layers
-        :param n_positions: is the number of positional embeddings
-        :param layer_norm_epsilon: is the layer norm epsilon
-        :param vocab_size: is the vocabulary size
-        :param r: is the lora rank
+        d_model: is the number of dimensions in the embeddings
+        n_heads: is the number of attention heads
+        n_layers: is the number of decoder layers
+        n_positions: is the number of positional embeddings
+        layer_norm_epsilon: is the layer norm epsilon
+        vocab_size: is the vocabulary size
+        r: is the lora rank
         """
         super().__init__()
 
@@ -168,7 +160,7 @@ class GPTModel(nn.Module):
 
     def forward(self, input_ids: torch.Tensor):
         """
-        :param input_ids: has shape `[batch_size, seq_len]`
+        input_ids: has shape (batch_size, seq_len)
         """
         batch_size, seq_len = input_ids.shape
 
